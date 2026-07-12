@@ -75,8 +75,8 @@ public class BepisArrayEditor : BasePlugin
 		private static readonly MethodInfo _setLinearPoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetLinearPoint));
 		private static readonly MethodInfo _setCurvePoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetCurvePoint));
 
-        private static readonly MethodInfo _buildList = typeof(SyncMemberEditorBuilder).GetMethod("BuildList", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo _generateMemberField = typeof(SyncMemberEditorBuilder).GetMethod("GenerateMemberField", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo _buildList = typeof(SyncMemberEditorBuilder).GetMethod("BuildList", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo _generateMemberField = typeof(SyncMemberEditorBuilder).GetMethod("GenerateMemberField", BindingFlags.Static | BindingFlags.NonPublic);
 
 		private static bool _skipListChanges = false;
 
@@ -308,8 +308,7 @@ public class BepisArrayEditor : BasePlugin
 				return false;
 
 			ui.Panel().Slot.GetComponent<LayoutElement>();
-
-			Slot slot = (Slot)_generateMemberField.MakeGenericMethod(fieldInfo.FieldType).Invoke(null, new object[] {array, name, ui, 0.3f});
+			Slot slot = (Slot)_generateMemberField.Invoke(null, new object[] {array, name, ui, 0.3f});
             Log.LogInfo($"Ran GenerateMemberField {slot}");
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
 			ui.Text("(Proxy Array)");
@@ -385,12 +384,7 @@ public class BepisArrayEditor : BasePlugin
 			}
         
 			if (!array.IsDriven) {
-                try {
                 _buildList.Invoke(null, new object[] {list, name, listField, ui});
-                } catch {
-                    Log.LogError("Failed to run _buildList");
-                }
-                Log.LogInfo("Ran _buildList Hopefully");
 				//SyncMemberEditorBuilder.BuildList(list, name, listField, ui);
 				var listSlot = ui.Current;
 				listSlot.GetComponentOrAttach<DestroyOnUserLeave>(d => d.TargetUser.Target == slot.LocalUser).TargetUser.Target = slot.LocalUser;
