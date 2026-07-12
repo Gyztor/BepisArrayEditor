@@ -11,3 +11,6 @@ A [Resonite](https://resonite.com/) mod that makes Arrays editable in game in th
 4. Start the game. If you want to verify that the mod is working you can check your BepInEx logs.
 
 ## Credits 
+[Gyztor Mizirath](https://github.com/Gyztor) - Ported to Bepis and added a few fixes for methods that were moved to private.
+[RyanVittore](https://github.com/RyanVittore) - Ported to RML and is what this is based off of.
+[ResoniteModdingGroup(Banane9)](https://github.com/ResoniteModdingGroup) - Orginal Mod
