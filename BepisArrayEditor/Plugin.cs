@@ -306,7 +306,9 @@ public class BepisArrayEditor : BasePlugin
 				return false;
 
 			ui.Panel().Slot.GetComponent<LayoutElement>();
+
 			Slot slot = (Slot)_generateMemberField.MakeGenericMethod(fieldInfo.FieldType).Invoke(null, new object[] {array, name, ui, 0.3f});
+            Log.LogInfo($"Ran GenerateMemberField {slot}");
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
 			ui.Text("(Proxy Array)");
 			ui.NestOut();
@@ -381,7 +383,12 @@ public class BepisArrayEditor : BasePlugin
 			}
         
 			if (!array.IsDriven) {
+                try {
                 _buildList.Invoke(null, new object[] {list, name, listField, ui});
+                } catch {
+                    Log.LogError("Failed to run _buildList");
+                }
+                Log.LogInfo("Ran _buildList Hopefully");
 				//SyncMemberEditorBuilder.BuildList(list, name, listField, ui);
 				var listSlot = ui.Current;
 				listSlot.GetComponentOrAttach<DestroyOnUserLeave>(d => d.TargetUser.Target == slot.LocalUser).TargetUser.Target = slot.LocalUser;
