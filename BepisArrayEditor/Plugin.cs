@@ -31,6 +31,7 @@ public class BepisArrayEditor : BasePlugin
         Log = base.Log;
 
         ArrayEditorEnabled = Config.Bind("Array Editor", "Enable ArrayEditor", true, new ConfigDescription("Enables the Array Editor Mod."));
+        ArrayEditorListUIImprovemts = Config.Bind("Array Editor", "Enable List UI Improvements", true, new ConfigDescription("Enables some List UI changes to make it a bit more nicer to use."));
 
         try
         {
@@ -59,7 +60,7 @@ public class BepisArrayEditor : BasePlugin
             else
             {
                 Log.LogInfo("Disabling BepisArrayEditor");
-                Harmony.UnpatchID("dev.gyztormizirath.BepisArrayEditor");
+                Harmony.UnpatchID("xyz.gyztormizirath.BepisArrayEditor");
             }
         };
     }

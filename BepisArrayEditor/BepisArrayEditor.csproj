@@ -6,8 +6,8 @@
     <Authors>Gyztor Mizirath</Authors>
     <TargetFramework>net10.0</TargetFramework>
     <RepositoryUrl>https://github.com/Gyztor/BepisArrayEditor</RepositoryUrl>
-    <PackageId>dev.gyztormizirath.BepisArrayEditor</PackageId>
-    <Product>GyztorModifications</Product>
+    <PackageId>xyz.gyztormizirath.BepisArrayEditor</PackageId>
+    <Product>BepisArrayEditor</Product>
     <RootNamespace>BepisArrayEditor</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <ResoniteTargetModLoader>BepisLoader</ResoniteTargetModLoader>
