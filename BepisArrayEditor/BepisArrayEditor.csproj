@@ -13,7 +13,7 @@
     <ResoniteTargetModLoader>BepisLoader</ResoniteTargetModLoader>
     <Nullable>enable</Nullable>
     <Deterministic>true</Deterministic>
-    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyToPlugins>false</CopyToPlugins>
     <ThunderstorePackable>true</ThunderstorePackable>
     <GamePath Condition="'$(ResonitePath)' != ''">$(ResonitePath)/</GamePath>
