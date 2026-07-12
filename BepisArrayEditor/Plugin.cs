@@ -64,6 +64,7 @@ public class BepisArrayEditor : BasePlugin
             }
         };
     }
+    [HarmonyPatch(typeof(SyncMemberEditorBuilder), "BuildArray")]
     internal sealed class ArrayEditor {
 		private static readonly MethodInfo _addCurveValueProxying = AccessTools.Method(typeof(ArrayEditor), nameof(AddCurveValueProxying));
 		private static readonly MethodInfo _addLinearValueProxying = AccessTools.Method(typeof(ArrayEditor), nameof(AddLinearValueProxying));
@@ -298,6 +299,7 @@ public class BepisArrayEditor : BasePlugin
 				};
 			}
 		}
+
 		private static bool Prefix(ISyncArray array, string name, FieldInfo fieldInfo, UIBuilder ui, float labelSize) {
 			if (!ArrayEditorEnabled.Value) {
 				return true; //Run original when disabled
