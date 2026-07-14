@@ -60,7 +60,7 @@ public class BepisArrayEditor : BasePlugin
             else
             {
                 Log.LogInfo("Disabling BepisArrayEditor");
-                Harmony.UnpatchID("xyz.gyztormizirath.BepisArrayEditor");
+				HarmonyInstance.UnpatchSelf();
             }
         };
     }
