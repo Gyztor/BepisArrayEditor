@@ -4,7 +4,7 @@ schemaVersion = "0.0.1"
 [package]
 namespace = "GyztorMizirath"
 name = "ArrayEditor"
-versionNumber = "1.0.0"
+versionNumber = "1.0.1"
 description = "A Bepis Mod Loader mod that allows arrays to load as lists. Allowing the use of components like GradientStripTexture."
 websiteUrl = "https://github.com/Gyztor/BepisArrayEditor"
 containsNsfwContent = false
@@ -25,7 +25,7 @@ target = "/"
 
 [[build.copy]]
 source = "./BepisArrayEditor/bin/Release/BepisArrayEditor.dll"
-target = "plugins/FixCopyComponentDrives/"
+target = "plugins/BepisArrayEditor/"
 
 [[build.copy]]
 source = "./BepisArrayEditor/bin/Release/BepisArrayEditor.pdb"
