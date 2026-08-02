@@ -54,10 +54,7 @@
       <HintPath>$(GamePath)FrooxEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Elements.Core">
-      <HintPath>$(GamePath)Elements.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
+    <PackageReference Include="YellowDogMan.Elements.Core" Version="1.*" />
     <Reference Include="Elements.Assets">
       <HintPath>$(GamePath)Elements.Assets.dll</HintPath>
       <Private>False</Private>
