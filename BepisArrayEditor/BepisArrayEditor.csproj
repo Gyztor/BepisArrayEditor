@@ -39,22 +39,16 @@
     <PackageReference Include="Resonite.GameLibs" Version="2026.*" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'EvilPatches'">
-    <DefineConstants>EvilPatches</DefineConstants>
-  </PropertyGroup>
-  <ItemGroup Condition="'$(Configuration)' != 'EvilPatches'">
-    <Compile Remove="EvilPatches\**" />
-  </ItemGroup>
-
-
-
   <!-- Local game references -->
   <ItemGroup Condition="Exists('$(GamePath)')">
     <Reference Include="FrooxEngine">
       <HintPath>$(GamePath)FrooxEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <PackageReference Include="YellowDogMan.Elements.Core" Version="1.*" />
+    <Reference Include="Elements.Core">
+      <HintPath>$(GamePath)Elements.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Elements.Assets">
       <HintPath>$(GamePath)Elements.Assets.dll</HintPath>
       <Private>False</Private>
@@ -100,7 +94,11 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
+  <!-- NuGet fallback stripped game references -->
+  <ItemGroup Condition="!Exists('$(GamePath)')">
+    <PackageReference Include="Resonite.GameLibs" Version="2026.*" />
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('$(GamePath)')">
     <ResoniteReference Include="Renderite.Shared" />
     <ResoniteReference Include="Elements.Assets" />
     <ResoniteReference Include="Elements.Core" />
