@@ -94,10 +94,7 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-  <!-- NuGet fallback stripped game references -->
-  <ItemGroup Condition="!Exists('$(GamePath)')">
-    <PackageReference Include="Resonite.GameLibs" Version="2026.*" />
-  </ItemGroup>
+
   <ItemGroup Condition="!Exists('$(GamePath)')">
     <ResoniteReference Include="Renderite.Shared" />
     <ResoniteReference Include="Elements.Assets" />
