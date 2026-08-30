@@ -10,7 +10,6 @@ using FrooxEngine.UIX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FrooxEngine.UIX;
 using HarmonyLib;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -75,8 +74,8 @@ public class BepisArrayEditor : BasePlugin
 		private static readonly MethodInfo _setLinearPoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetLinearPoint));
 		private static readonly MethodInfo _setCurvePoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetCurvePoint));
 
-        private static readonly MethodInfo _buildList = typeof(SyncMemberEditorBuilder).GetMethod("BuildList", BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo _generateMemberField = typeof(SyncMemberEditorBuilder).GetMethod("GenerateMemberField", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo _buildList = typeof(SyncMemberEditorBuilder).GetMethod("BuildList", BindingFlags.Static | BindingFlags.NonPublic)!;
+        private static readonly MethodInfo _generateMemberField = typeof(SyncMemberEditorBuilder).GetMethod("GenerateMemberField", BindingFlags.Static | BindingFlags.NonPublic)!;
 
 		private static bool _skipListChanges = false;
 
@@ -308,7 +307,7 @@ public class BepisArrayEditor : BasePlugin
 				return false;
 
 			ui.Panel().Slot.GetComponent<LayoutElement>();
-			Slot slot = (Slot)_generateMemberField.Invoke(null, new object[] {array, name, ui, 0.3f});
+			Slot slot = (Slot)_generateMemberField.Invoke(null, new object[] {array, name, ui, 0.3f})!;
             Log.LogInfo($"Ran GenerateMemberField {slot}");
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
 			ui.Text("(Proxy Array)");
@@ -332,24 +331,24 @@ public class BepisArrayEditor : BasePlugin
 			FieldInfo listField;
 
 			if (isSyncLinear && SupportsLerp(syncLinearType!)) {
-				var gradientType = typeof(ValueGradientDriver<>).MakeGenericType(syncLinearType);
+				var gradientType = typeof(ValueGradientDriver<>).MakeGenericType(syncLinearType!);
 				var gradient = GetOrAttachComponent(proxySlot, gradientType, out var attachedNew);
 
 				list = (ISyncList)gradient.GetSyncMember(nameof(ValueGradientDriver<float>.Points));
 				listField = gradient.GetSyncMemberFieldInfo(nameof(ValueGradientDriver<float>.Points));
 
 				if (attachedNew) {
-					_addLinearValueProxying.MakeGenericMethod(syncLinearType).Invoke(null, [array, list]);
+					_addLinearValueProxying.MakeGenericMethod(syncLinearType!).Invoke(null, [array, list]);
 				}
 			} else if (isSyncCurve && SupportsLerp(syncCurveType!)) {
-				var gradientType = typeof(ValueGradientDriver<>).MakeGenericType(syncCurveType);
+				var gradientType = typeof(ValueGradientDriver<>).MakeGenericType(syncCurveType!);
 				var gradient = GetOrAttachComponent(proxySlot, gradientType, out var attachedNew);
 
 				list = (ISyncList)gradient.GetSyncMember(nameof(ValueGradientDriver<float>.Points));
 				listField = gradient.GetSyncMemberFieldInfo(nameof(ValueGradientDriver<float>.Points));
 
 				if (attachedNew) {
-					_addCurveValueProxying.MakeGenericMethod(syncCurveType).Invoke(null, [array, list]);
+					_addCurveValueProxying.MakeGenericMethod(syncCurveType!).Invoke(null, [array, list]);
 				}
 			} else {
 				if (arrayType == typeof(TubePoint)) {
@@ -362,13 +361,13 @@ public class BepisArrayEditor : BasePlugin
 						AddTubePointProxying((SyncArray<TubePoint>)array, (SyncElementList<ValueGradientDriver<float3>.Point>)list);
 					}
 				} else if (Coder.IsEnginePrimitive(arrayType)) {
-					var multiplexerType = typeof(ValueMultiplexer<>).MakeGenericType(arrayType);
+					var multiplexerType = typeof(ValueMultiplexer<>).MakeGenericType(arrayType!);
 					var multiplexer = GetOrAttachComponent(proxySlot, multiplexerType, out var attachedNew);
 					list = (ISyncList)multiplexer.GetSyncMember(nameof(ValueMultiplexer<float>.Values));
 					listField = multiplexer.GetSyncMemberFieldInfo(nameof(ValueMultiplexer<float>.Values));
 
 					if (attachedNew)
-						_addListValueProxying.MakeGenericMethod(arrayType).Invoke(null, [array, list]);
+						_addListValueProxying.MakeGenericMethod(arrayType!).Invoke(null, [array, list]);
 				} else if (_iWorldElementType.IsAssignableFrom(arrayType)) {
 					var multiplexerType = typeof(ReferenceMultiplexer<>).MakeGenericType(arrayType);
 					var multiplexer = GetOrAttachComponent(proxySlot, multiplexerType, out var attachedNew);
@@ -446,7 +445,7 @@ public class BepisArrayEditor : BasePlugin
 					if (comp.GetType().IsGenericType && comp.GetType().GetGenericTypeDefinition() == typeof(ValueMultiplexer<>)) {
 						list = comp.GetSyncMember("Values") as ISyncList;
 						_skipListChanges = true;
-						list.World.RunSynchronously(() => _skipListChanges = false);
+						list!.World.RunSynchronously(() => _skipListChanges = false);
 						list.EnsureExactElementCount(array.Count);
 						for (int i = 0; i < array.Count; i++) {
 							((IField)list.GetElement(i)).BoxedValue = array.GetElement(i);
@@ -454,7 +453,7 @@ public class BepisArrayEditor : BasePlugin
 					} else if (comp.GetType().IsGenericType && comp.GetType().GetGenericTypeDefinition() == typeof(ReferenceMultiplexer<>)) {
 						list = comp.GetSyncMember("References") as ISyncList;
 						_skipListChanges = true;
-						list.World.RunSynchronously(() => _skipListChanges = false);
+						list!.World.RunSynchronously(() => _skipListChanges = false);
 						list.EnsureExactElementCount(array.Count);
 						for (int i = 0; i < array.Count; i++) {
 							((ISyncRef)list.GetElement(i)).Target = (IWorldElement)array.GetElement(i);
@@ -462,7 +461,7 @@ public class BepisArrayEditor : BasePlugin
 					} else if (comp.GetType().IsGenericType && comp.GetType().GetGenericTypeDefinition() == typeof(ValueGradientDriver<>)) {
 						list = comp.GetSyncMember("Points") as ISyncList;
 						_skipListChanges = true;
-						list.World.RunSynchronously(() => _skipListChanges = false);
+						list!.World.RunSynchronously(() => _skipListChanges = false);
 						list.EnsureExactElementCount(array.Count);
 
 						var isSyncLinear = TryGetGenericParameter(typeof(SyncLinear<>), array.GetType(), out var syncLinearType);
@@ -477,12 +476,12 @@ public class BepisArrayEditor : BasePlugin
 							var elem = list.GetElement(i);
 
 							if (isSyncLinear && SupportsLerp(syncLinearType!)) {
-								_setLinearPoint.MakeGenericMethod(syncLinearType).Invoke(null, [elem, array.GetElement(i)]);
+								_setLinearPoint.MakeGenericMethod(syncLinearType!).Invoke(null, [elem, array.GetElement(i)]);
 							} else if (isSyncCurve && SupportsLerp(syncCurveType!)) {
-								_setCurvePoint.MakeGenericMethod(syncCurveType).Invoke(null, [elem, array.GetElement(i)]);
+								_setCurvePoint.MakeGenericMethod(syncCurveType!).Invoke(null, [elem, array.GetElement(i)]);
 							} else {
 								if (arrayType == typeof(TubePoint)) {
-									SetTubePoint((ValueGradientDriver<float3>.Point)elem!, (TubePoint)array.GetElement(i));
+									SetTubePoint((ValueGradientDriver<float3>.Point)elem, (TubePoint)array.GetElement(i));
 								}
 							}
 						}
@@ -520,7 +519,7 @@ public class BepisArrayEditor : BasePlugin
 					return true;
 				}
 			}
-			return TryGetGenericParameter(baseType, concreteType.BaseType, out genericParameter);
+			return TryGetGenericParameter(baseType, concreteType.BaseType!, out genericParameter);
 		}
 	}
 }
