@@ -13,6 +13,7 @@ using System.Linq;
 using HarmonyLib;
 using System.Reflection;
 using System.Reflection.Emit;
+using SkyFrost.Base;
 
 namespace BepisArrayEditor;
 
@@ -77,6 +78,8 @@ public class BepisArrayEditor : BasePlugin
         private static readonly MethodInfo _buildList = typeof(SyncMemberEditorBuilder).GetMethod("BuildList", BindingFlags.Static | BindingFlags.NonPublic)!;
         private static readonly MethodInfo _generateMemberField = typeof(SyncMemberEditorBuilder).GetMethod("GenerateMemberField", BindingFlags.Static | BindingFlags.NonPublic)!;
 
+
+
 		private static bool _skipListChanges = false;
 
 		private static void AddCurveValueProxying<T>(SyncArray<CurveKey<T>> array, SyncElementList<ValueGradientDriver<T>.Point> list)
@@ -111,7 +114,7 @@ public class BepisArrayEditor : BasePlugin
 			};
 		}
 
-		private static void AddLinearValueProxying<T>(SyncArray<LinearKey<T>> array, SyncElementList<ValueGradientDriver<T>.Point> list)
+		private static void AddLinearValueProxying<T>(SyncLinear<T> array, SyncElementList<ValueGradientDriver<T>.Point> list)
 			where T : IEquatable<T> {
 			foreach (var key in array) {
 				var point = list.Add();
@@ -127,7 +130,12 @@ public class BepisArrayEditor : BasePlugin
 
 				if (!_skipListChanges) {
 					array.Changed -= ArrayChanged;
-					array.Insert(buffer, startIndex);
+					foreach (var point in addedElements)
+						{
+							array.InsertKey(
+								point.Position.Value,
+								point.Value.Value);
+						}
 					array.Changed += ArrayChanged;
 				}
 				AddUpdateProxies(array, list, addedElements);
@@ -232,19 +240,31 @@ public class BepisArrayEditor : BasePlugin
 			};
 		}
 
-		private static void AddUpdateProxies<T>(SyncArray<LinearKey<T>> array,
+		private static void AddUpdateProxies<T>(SyncLinear<T> array,
 			SyncElementList<ValueGradientDriver<T>.Point> list, IEnumerable<ValueGradientDriver<T>.Point> elements)
 					where T : IEquatable<T> {
-			foreach (var point in elements) {
-				point.Changed += syncObject => {
-					if (_skipListChanges) return;
-					var index = list.IndexOfElement(point);
-					array.Changed -= ArrayChanged;
-					array[index] = new LinearKey<T>(point.Position, point.Value);
-					array.Changed += ArrayChanged;
-				};
-			}
+						var concreteArrayType = typeof(SyncArray<>).MakeGenericType(typeof(LinearKey<T>));
+    					var _getElement = concreteArrayType.GetMethod("GetElement", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    					var _setElement = concreteArrayType.GetMethod("SetElement", BindingFlags.Instance | BindingFlags.NonPublic)!;
+						foreach (var point in elements) {
+							point.Changed += syncObject => {
+								if (_skipListChanges) return;
+								var index = list.IndexOfElement(point);
+								if (index < 0 || index >= array.Count)
+									return;
+								//var key = array.GetElement(index);
+								var key = (LinearKey<T>)_getElement.Invoke(array, new object[] { index })!;
+
+								key.time = point.Position.Value;
+								key.value = point.Value.Value;
+
+								array.Changed -= ArrayChanged;
+								_setElement.Invoke(array, new object[] {index, key});
+								array.Changed += ArrayChanged;
+							};
+						}
 		}
+
 
 		private static void AddUpdateProxies<T>(SyncArray<T> array, SyncElementList<Sync<T>> list, IEnumerable<Sync<T>> elements)
 					where T : IEquatable<T> {
@@ -303,18 +323,24 @@ public class BepisArrayEditor : BasePlugin
 			if (!ArrayEditorEnabled.Value) {
 				return true; //Run original when disabled
 			}
-			if (!TryGetGenericParameter(typeof(SyncArray<>), array.GetType(), out var arrayType))
+			var isSyncArray = TryGetGenericParameter(typeof(SyncArray<>), array.GetType(), out var arrayType);
+			Log.LogInfo($"Found {array}");
+			var isSyncLinear = TryGetGenericParameter(typeof(SyncLinear<>), array.GetType(), out var syncLinearType);
+			Log.LogInfo($"isSyncLinear: {isSyncLinear}");
+			var isSyncCurve = TryGetGenericParameter(typeof(SyncCurve<>), array.GetType(), out var syncCurveType);
+			Log.LogInfo($"isSyncCurve: {isSyncCurve}");
+			
+			if (!isSyncArray && !isSyncLinear && !isSyncCurve)
+			{
+				Log.LogInfo($"Returned False because type {array.GetType()}");
 				return false;
-
+			}
 			ui.Panel().Slot.GetComponent<LayoutElement>();
 			Slot slot = (Slot)_generateMemberField.Invoke(null, new object[] {array, name, ui, 0.3f})!;
             Log.LogInfo($"Ran GenerateMemberField {slot}");
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
 			ui.Text("(Proxy Array)");
 			ui.NestOut();
-
-			var isSyncLinear = TryGetGenericParameter(typeof(SyncLinear<>), array.GetType(), out var syncLinearType);
-			var isSyncCurve = TryGetGenericParameter(typeof(SyncCurve<>), array.GetType(), out var syncCurveType);
 
 			var proxySlotName = $"{name}-{array.ReferenceID}-Proxy";
 			var proxiesSlot = ui.World.AssetsSlot;
@@ -330,12 +356,16 @@ public class BepisArrayEditor : BasePlugin
 			ISyncList list;
 			FieldInfo listField;
 
+
+
 			if (isSyncLinear && SupportsLerp(syncLinearType!)) {
 				var gradientType = typeof(ValueGradientDriver<>).MakeGenericType(syncLinearType!);
 				var gradient = GetOrAttachComponent(proxySlot, gradientType, out var attachedNew);
 
 				list = (ISyncList)gradient.GetSyncMember(nameof(ValueGradientDriver<float>.Points));
 				listField = gradient.GetSyncMemberFieldInfo(nameof(ValueGradientDriver<float>.Points));
+
+				Log.LogInfo("Sync Linear tried to generate");
 
 				if (attachedNew) {
 					_addLinearValueProxying.MakeGenericMethod(syncLinearType!).Invoke(null, [array, list]);
@@ -346,6 +376,8 @@ public class BepisArrayEditor : BasePlugin
 
 				list = (ISyncList)gradient.GetSyncMember(nameof(ValueGradientDriver<float>.Points));
 				listField = gradient.GetSyncMemberFieldInfo(nameof(ValueGradientDriver<float>.Points));
+
+				Log.LogInfo("Sync Curve tried to generate");
 
 				if (attachedNew) {
 					_addCurveValueProxying.MakeGenericMethod(syncCurveType!).Invoke(null, [array, list]);
