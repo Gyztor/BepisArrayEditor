@@ -73,6 +73,8 @@ public class BepisArrayEditor : BasePlugin
 
 		private static readonly MethodInfo _setLinearPoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetLinearPoint));
 		private static readonly MethodInfo _setCurvePoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetCurvePoint));
+		private static MethodInfo _generateMemberField = AccessTools.Method(typeof(SyncMemberEditorBuilder), "GenerateMemberField");
+		private static MethodInfo _buildList = AccessTools.Method(typeof(SyncMemberEditorBuilder), "BuildList");
 
 		private static bool _skipListChanges = false;
 
@@ -317,7 +319,7 @@ public class BepisArrayEditor : BasePlugin
 
 			ui.Panel().Slot.GetComponent<LayoutElement>();
 			//Slot slot = SyncMemberEditorBuilder.GenerateMemberField(array, name, ui, 0.3f);
-			Slot slot = (Slot)Traverse.CreateWithType("SyncMemberEditorBuilder").Method("GenerateMemberField").GetValue(array, name, ui, 0.3f);
+			Slot slot = (Slot)_generateMemberField.Invoke(null, [array, name, ui, 0.3f])!;
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
 			ui.Text("ArrayEditing.ProxyArray".AsLocaleKey());
 			ui.NestOut();
@@ -393,7 +395,7 @@ public class BepisArrayEditor : BasePlugin
 
 			if (!array.IsDriven) {
 				//SyncMemberEditorBuilder.BuildList(list, name, listField, ui);
-				Traverse.CreateWithType("SyncMemberEditorBuilder").Method("BuildList").GetValue(list, name, listField, ui);
+				_buildList.Invoke(null, [list, name, listField, ui]);
 				var listSlot = ui.Current;
 				listSlot.GetComponentOrAttach<DestroyOnUserLeave>(d => d.TargetUser.Target == slot.LocalUser).TargetUser.Target = slot.LocalUser;
 				listSlot.PersistentSelf = false;

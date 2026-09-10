@@ -55,6 +55,10 @@
     <PackageReference Include="Resonite.GameLibs" Version="2026.*" />
   </ItemGroup>-->
 
+  <ItemGroup>
+		<EmbeddedResource Include="Locale\*.json" />
+	</ItemGroup>
+
   <!-- Post-build copy to game plugins folder -->
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <ItemGroup>
