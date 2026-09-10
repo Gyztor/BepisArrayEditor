@@ -12,8 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using System.Reflection;
-using System.Reflection.Emit;
-using SkyFrost.Base;
 
 namespace BepisArrayEditor;
 
@@ -64,8 +62,9 @@ public class BepisArrayEditor : BasePlugin
             }
         };
     }
-    [HarmonyPatch(typeof(SyncMemberEditorBuilder), "BuildArray")]
-    internal sealed class ArrayEditor {
+
+	[HarmonyPatch(typeof(SyncMemberEditorBuilder), "BuildArray")]
+	internal sealed class ArrayEditor {
 		private static readonly MethodInfo _addCurveValueProxying = AccessTools.Method(typeof(ArrayEditor), nameof(AddCurveValueProxying));
 		private static readonly MethodInfo _addLinearValueProxying = AccessTools.Method(typeof(ArrayEditor), nameof(AddLinearValueProxying));
 		private static readonly MethodInfo _addListReferenceProxying = AccessTools.Method(typeof(ArrayEditor), nameof(AddListReferenceProxying));
@@ -75,15 +74,11 @@ public class BepisArrayEditor : BasePlugin
 		private static readonly MethodInfo _setLinearPoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetLinearPoint));
 		private static readonly MethodInfo _setCurvePoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetCurvePoint));
 
-        private static readonly MethodInfo _buildList = typeof(SyncMemberEditorBuilder).GetMethod("BuildList", BindingFlags.Static | BindingFlags.NonPublic)!;
-        private static readonly MethodInfo _generateMemberField = typeof(SyncMemberEditorBuilder).GetMethod("GenerateMemberField", BindingFlags.Static | BindingFlags.NonPublic)!;
-
-
-
 		private static bool _skipListChanges = false;
 
-		private static void AddCurveValueProxying<T>(SyncArray<CurveKey<T>> array, SyncElementList<ValueGradientDriver<T>.Point> list)
+		private static void AddCurveValueProxying<T>(SyncArrayBase<CurveKey<T>> array, SyncElementList<ValueGradientDriver<T>.Point> list)
 			where T : IEquatable<T> {
+			
 			foreach (var key in array) {
 				var point = list.Add();
 				point.Position.Value = key.time;
@@ -98,7 +93,10 @@ public class BepisArrayEditor : BasePlugin
 
 				if (!_skipListChanges) {
 					array.Changed -= ArrayChanged;
-					array.Insert(buffer, startIndex);
+					//array.CheckWriteIndex(startIndex);
+					Traverse.Create(array).Method("CheckWriteIndex").GetValue(startIndex);
+					//array.InternalWrite(buffer, startIndex, 0, buffer.Length, true);
+					Traverse.Create(array).Method("InternalWrite").GetValue(buffer, startIndex, 0, buffer.Length, true);
 					array.Changed += ArrayChanged;
 				}
 
@@ -114,7 +112,7 @@ public class BepisArrayEditor : BasePlugin
 			};
 		}
 
-		private static void AddLinearValueProxying<T>(SyncLinear<T> array, SyncElementList<ValueGradientDriver<T>.Point> list)
+		private static void AddLinearValueProxying<T>(SyncArrayBase<LinearKey<T>> array, SyncElementList<ValueGradientDriver<T>.Point> list)
 			where T : IEquatable<T> {
 			foreach (var key in array) {
 				var point = list.Add();
@@ -130,12 +128,10 @@ public class BepisArrayEditor : BasePlugin
 
 				if (!_skipListChanges) {
 					array.Changed -= ArrayChanged;
-					foreach (var point in addedElements)
-						{
-							array.InsertKey(
-								point.Position.Value,
-								point.Value.Value);
-						}
+					//array.CheckWriteIndex(startIndex);
+					Traverse.Create(array).Method("CheckWriteIndex").GetValue(startIndex);
+					//array.InternalWrite(buffer, startIndex, 0, buffer.Length, true);
+					Traverse.Create(array).Method("InternalWrite").GetValue(buffer, startIndex, 0, buffer.Length, true);
 					array.Changed += ArrayChanged;
 				}
 				AddUpdateProxies(array, list, addedElements);
@@ -240,31 +236,20 @@ public class BepisArrayEditor : BasePlugin
 			};
 		}
 
-		private static void AddUpdateProxies<T>(SyncLinear<T> array,
+		private static void AddUpdateProxies<T>(SyncArrayBase<LinearKey<T>> array,
 			SyncElementList<ValueGradientDriver<T>.Point> list, IEnumerable<ValueGradientDriver<T>.Point> elements)
 					where T : IEquatable<T> {
-						var concreteArrayType = typeof(SyncArray<>).MakeGenericType(typeof(LinearKey<T>));
-    					var _getElement = concreteArrayType.GetMethod("GetElement", BindingFlags.Instance | BindingFlags.NonPublic)!;
-    					var _setElement = concreteArrayType.GetMethod("SetElement", BindingFlags.Instance | BindingFlags.NonPublic)!;
-						foreach (var point in elements) {
-							point.Changed += syncObject => {
-								if (_skipListChanges) return;
-								var index = list.IndexOfElement(point);
-								if (index < 0 || index >= array.Count)
-									return;
-								//var key = array.GetElement(index);
-								var key = (LinearKey<T>)_getElement.Invoke(array, new object[] { index })!;
-
-								key.time = point.Position.Value;
-								key.value = point.Value.Value;
-
-								array.Changed -= ArrayChanged;
-								_setElement.Invoke(array, new object[] {index, key});
-								array.Changed += ArrayChanged;
-							};
-						}
+			foreach (var point in elements) {
+				point.Changed += syncObject => {
+					if (_skipListChanges) return;
+					var index = list.IndexOfElement(point);
+					array.Changed -= ArrayChanged;
+					//array.SetElement(index, new LinearKey<T>(point.Position, point.Value));
+					Traverse.Create(array).Method("SetMethod").GetValue(index, new LinearKey<T>(point.Position, point.Value));
+					array.Changed += ArrayChanged;
+				};
+			}
 		}
-
 
 		private static void AddUpdateProxies<T>(SyncArray<T> array, SyncElementList<Sync<T>> list, IEnumerable<Sync<T>> elements)
 					where T : IEquatable<T> {
@@ -305,7 +290,7 @@ public class BepisArrayEditor : BasePlugin
 			}
 		}
 
-		private static void AddUpdateProxies<T>(SyncArray<CurveKey<T>> array,
+		private static void AddUpdateProxies<T>(SyncArrayBase<CurveKey<T>> array,
 			SyncElementList<ValueGradientDriver<T>.Point> list, IEnumerable<ValueGradientDriver<T>.Point> elements)
 					where T : IEquatable<T> {
 			foreach (var point in elements) {
@@ -313,7 +298,9 @@ public class BepisArrayEditor : BasePlugin
 					if (_skipListChanges) return;
 					var index = list.IndexOfElement(point);
 					array.Changed -= ArrayChanged;
-					array[index] = new CurveKey<T>(point.Position, point.Value, array[index].leftTangent, array[index].rightTangent);
+					//array.SetElement(index, new CurveKey<T>(point.Position, point.Value, array.GetElement(index).leftTangent, array.GetElement(index).rightTangent));
+					var _getStore = (CurveKey<T>)Traverse.Create(array).Method("GetElement").GetValue(index);
+					Traverse.Create(array).Method("SetMethod").GetValue(index, new CurveKey<T>(point.Position, point.Value, _getStore.leftTangent, _getStore.rightTangent));
 					array.Changed += ArrayChanged;
 				};
 			}
@@ -323,24 +310,20 @@ public class BepisArrayEditor : BasePlugin
 			if (!ArrayEditorEnabled.Value) {
 				return true; //Run original when disabled
 			}
-			var isSyncArray = TryGetGenericParameter(typeof(SyncArray<>), array.GetType(), out var arrayType);
-			Log.LogInfo($"Found {array}");
-			var isSyncLinear = TryGetGenericParameter(typeof(SyncLinear<>), array.GetType(), out var syncLinearType);
-			Log.LogInfo($"isSyncLinear: {isSyncLinear}");
-			var isSyncCurve = TryGetGenericParameter(typeof(SyncCurve<>), array.GetType(), out var syncCurveType);
-			Log.LogInfo($"isSyncCurve: {isSyncCurve}");
-			
-			if (!isSyncArray && !isSyncLinear && !isSyncCurve)
-			{
-				Log.LogInfo($"Returned False because type {array.GetType()}");
-				return false;
+			if (!TryGetGenericParameter(typeof(SyncArrayBase<>), array.GetType(), out var arrayType)) {
+				Log.LogWarning($"{array.GetType()} is not yet supported");
+				return true; //Allow the original to run when unable to provide an editor
 			}
+
 			ui.Panel().Slot.GetComponent<LayoutElement>();
-			Slot slot = (Slot)_generateMemberField.Invoke(null, new object[] {array, name, ui, 0.3f})!;
-            Log.LogInfo($"Ran GenerateMemberField {slot}");
+			//Slot slot = SyncMemberEditorBuilder.GenerateMemberField(array, name, ui, 0.3f);
+			Slot slot = (Slot)Traverse.CreateWithType("SyncMemberEditorBuilder").Method("GenerateMemberField").GetValue(array, name, ui, 0.3f);
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
-			ui.Text("(Proxy Array)");
+			ui.Text("ArrayEditing.ProxyArray".AsLocaleKey());
 			ui.NestOut();
+
+			var isSyncLinear = TryGetGenericParameter(typeof(SyncLinear<>), array.GetType(), out var syncLinearType);
+			var isSyncCurve = TryGetGenericParameter(typeof(SyncCurve<>), array.GetType(), out var syncCurveType);
 
 			var proxySlotName = $"{name}-{array.ReferenceID}-Proxy";
 			var proxiesSlot = ui.World.AssetsSlot;
@@ -356,16 +339,12 @@ public class BepisArrayEditor : BasePlugin
 			ISyncList list;
 			FieldInfo listField;
 
-
-
 			if (isSyncLinear && SupportsLerp(syncLinearType!)) {
 				var gradientType = typeof(ValueGradientDriver<>).MakeGenericType(syncLinearType!);
 				var gradient = GetOrAttachComponent(proxySlot, gradientType, out var attachedNew);
 
 				list = (ISyncList)gradient.GetSyncMember(nameof(ValueGradientDriver<float>.Points));
 				listField = gradient.GetSyncMemberFieldInfo(nameof(ValueGradientDriver<float>.Points));
-
-				Log.LogInfo("Sync Linear tried to generate");
 
 				if (attachedNew) {
 					_addLinearValueProxying.MakeGenericMethod(syncLinearType!).Invoke(null, [array, list]);
@@ -376,8 +355,6 @@ public class BepisArrayEditor : BasePlugin
 
 				list = (ISyncList)gradient.GetSyncMember(nameof(ValueGradientDriver<float>.Points));
 				listField = gradient.GetSyncMemberFieldInfo(nameof(ValueGradientDriver<float>.Points));
-
-				Log.LogInfo("Sync Curve tried to generate");
 
 				if (attachedNew) {
 					_addCurveValueProxying.MakeGenericMethod(syncCurveType!).Invoke(null, [array, list]);
@@ -413,10 +390,10 @@ public class BepisArrayEditor : BasePlugin
 					return false;
 				}
 			}
-        
+
 			if (!array.IsDriven) {
-                _buildList.Invoke(null, new object[] {list, name, listField, ui});
 				//SyncMemberEditorBuilder.BuildList(list, name, listField, ui);
+				Traverse.CreateWithType("SyncMemberEditorBuilder").Method("BuildList").GetValue(list, name, listField, ui);
 				var listSlot = ui.Current;
 				listSlot.GetComponentOrAttach<DestroyOnUserLeave>(d => d.TargetUser.Target == slot.LocalUser).TargetUser.Target = slot.LocalUser;
 				listSlot.PersistentSelf = false;
@@ -427,15 +404,14 @@ public class BepisArrayEditor : BasePlugin
 						listSlot.AttachComponent<LayoutElement>().MinHeight.Value = 24f;
 						var newUi = new UIBuilder(listSlot, listSlot);
 						RadiantUI_Constants.SetupEditorStyle(newUi);
-						newUi.Text("(array is driven)");
+						newUi.Text("ArrayEditting.DrivenArray".AsLocaleKey());
 						proxySlot?.Destroy();
 						array.Changed -= ArrayDriveCheck;
 					}
 				}
 				array.Changed += ArrayDriveCheck;
 			} else {
-				LocaleString text = "(array is driven)";
-				ui.Text(in text);
+				ui.Text("ArrayEditting.DrivenArray".AsLocaleKey());
 			}
 
 			if (newProxy) {
@@ -513,7 +489,7 @@ public class BepisArrayEditor : BasePlugin
 								_setCurvePoint.MakeGenericMethod(syncCurveType!).Invoke(null, [elem, array.GetElement(i)]);
 							} else {
 								if (arrayType == typeof(TubePoint)) {
-									SetTubePoint((ValueGradientDriver<float3>.Point)elem, (TubePoint)array.GetElement(i));
+									SetTubePoint((ValueGradientDriver<float3>.Point)elem!, (TubePoint)array.GetElement(i));
 								}
 							}
 						}

@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-<!--<Project Sdk="Remora.Resonite.Sdk/2.3.1">-->
 
   <PropertyGroup>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Authors>Gyztor Mizirath</Authors>
     <TargetFramework>net10.0</TargetFramework>
     <RepositoryUrl>https://github.com/Gyztor/BepisArrayEditor</RepositoryUrl>
@@ -34,14 +33,9 @@
     <PackageReference Include="HarmonyX" Version="2.*" />
   </ItemGroup>
 
-  <!-- NuGet fallback stripped game references -->
-  <ItemGroup Condition="!Exists('$(GamePath)')">
-    <PackageReference Include="Resonite.GameLibs" Version="2026.*" />
-  </ItemGroup>
-
   <!-- Local game references -->
   <ItemGroup Condition="Exists('$(GamePath)')">
-    <Reference Include="FrooxEngine">
+    <Reference Include="FrooxEngine" Publicize="true">
       <HintPath>$(GamePath)FrooxEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -49,72 +43,17 @@
       <HintPath>$(GamePath)Elements.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Elements.Assets">
-      <HintPath>$(GamePath)Elements.Assets.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Renderite.Shared">
-      <HintPath>$(GamePath)Renderite.Shared.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="LiteNetLib">
-      <HintPath>$(GamePath)LiteNetLib.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ProtoFlux.Nodes.FrooxEngine">
-      <HintPath>$(GamePath)ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ProtoFluxBindings">
-      <HintPath>$(GamePath)ProtoFluxBindings.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Steamworks.NET">
-      <HintPath>$(GamePath)Steamworks.NET.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="SkyFrost.Base">
-      <HintPath>$(GamePath)SkyFrost.Base.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="SkyFrost.Base.Models">
-      <HintPath>$(GamePath)SkyFrost.Base.Models.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FrooxEngine.Store">
-      <HintPath>$(GamePath)FrooxEngine.Store.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ProtoFlux.Core">
-      <HintPath>$(GamePath)ProtoFlux.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(GamePath)Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup Condition="!Exists('$(GamePath)')">
-    <ResoniteReference Include="Renderite.Shared" />
-    <ResoniteReference Include="Elements.Assets" />
     <ResoniteReference Include="Elements.Core" />
-    <ResoniteReference Include="Elements.Quantity" />
     <ResoniteReference Include="FrooxEngine" />
-    <ResoniteReference Include="FrooxEngine.Store" />
-    <ResoniteReference Include="ProtoFlux.Core" />
-    <ResoniteReference Include="ProtoFlux.Nodes.Core" />
-    <ResoniteReference Include="ProtoFlux.Nodes.FrooxEngine" />
-    <ResoniteReference Include="ProtoFluxBindings" />
-    <ResoniteReference Include="SkyFrost.Base" />
-    <ResoniteReference Include="SkyFrost.Base.Models" />
-    <ResoniteReference Include="LiteNetLib" />
-    <ResoniteReference Include="Newtonsoft.Json" />
-    <Reference Include="Steamworks.NET">
-      <HintPath>$(GamePath)Steamworks.NET.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
+
+  <!-- NuGet fallback stripped game references -->
+  <!--<ItemGroup Condition="!Exists('$(GamePath)')">
+    <PackageReference Include="Resonite.GameLibs" Version="2026.*" />
+  </ItemGroup>-->
 
   <!-- Post-build copy to game plugins folder -->
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
