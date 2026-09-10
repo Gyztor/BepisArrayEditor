@@ -3,6 +3,8 @@
 
 A [Resonite](https://resonite.com/) mod that makes Arrays editable in game in the few places those are used.
 
+<img width="593" height="239" alt="Example Image with a ValueArray of type bool" src="https://github.com/user-attachments/assets/4166eda8-2b2a-4c6f-a161-a0470ff5c4ca" />
+
 ## Installation (Manual)
 1. Install [BepisLoader](https://github.com/ResoniteModding/BepisLoader) for Resonite.
 2. Download the latest release ZIP file (e.g., `GyztorMizirath-ArrayEditor-X.zip`) from the [Releases](https://github.com/Gyztor/BepisArrayEditor/releases) page.
