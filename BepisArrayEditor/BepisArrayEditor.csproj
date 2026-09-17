@@ -24,6 +24,10 @@
     </RestoreAdditionalProjectSources>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+  </PropertyGroup>
+
   <!-- Modding dependencies -->
   <ItemGroup>
     <PackageReference Include="BepInEx.NET.CoreCLR" Version="6.0.0-be.*" IncludeAssets="compile" />
