@@ -3,7 +3,6 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.NET.Common;
 using BepInExResoniteShim;
-using BepisResoniteWrapper;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.UIX;
@@ -73,8 +72,6 @@ public class BepisArrayEditor : BasePlugin
 
 		private static readonly MethodInfo _setLinearPoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetLinearPoint));
 		private static readonly MethodInfo _setCurvePoint = AccessTools.Method(typeof(ArrayEditor), nameof(SetCurvePoint));
-		private static MethodInfo _generateMemberField = AccessTools.Method(typeof(SyncMemberEditorBuilder), "GenerateMemberField");
-		private static MethodInfo _buildList = AccessTools.Method(typeof(SyncMemberEditorBuilder), "BuildList");
 
 		private static bool _skipListChanges = false;
 
@@ -130,10 +127,10 @@ public class BepisArrayEditor : BasePlugin
 
 				if (!_skipListChanges) {
 					array.Changed -= ArrayChanged;
-					//array.CheckWriteIndex(startIndex);
-					Traverse.Create(array).Method("CheckWriteIndex").GetValue(startIndex);
-					//array.InternalWrite(buffer, startIndex, 0, buffer.Length, true);
-					Traverse.Create(array).Method("InternalWrite").GetValue(buffer, startIndex, 0, buffer.Length, true);
+					array.CheckWriteIndex(startIndex);
+					//Traverse.Create(array).Method("CheckWriteIndex").GetValue(startIndex);
+					array.InternalWrite(buffer, startIndex, 0, buffer.Length, true);
+					//Traverse.Create(array).Method("InternalWrite").GetValue(buffer, startIndex, 0, buffer.Length, true);
 					array.Changed += ArrayChanged;
 				}
 				AddUpdateProxies(array, list, addedElements);
@@ -246,8 +243,8 @@ public class BepisArrayEditor : BasePlugin
 					if (_skipListChanges) return;
 					var index = list.IndexOfElement(point);
 					array.Changed -= ArrayChanged;
-					//array.SetElement(index, new LinearKey<T>(point.Position, point.Value));
-					Traverse.Create(array).Method("SetMethod").GetValue(index, new LinearKey<T>(point.Position, point.Value));
+					array.SetElement(index, new LinearKey<T>(point.Position, point.Value));
+					//Traverse.Create(array).Method("SetMethod").GetValue(index, new LinearKey<T>(point.Position, point.Value));
 					array.Changed += ArrayChanged;
 				};
 			}
@@ -300,9 +297,9 @@ public class BepisArrayEditor : BasePlugin
 					if (_skipListChanges) return;
 					var index = list.IndexOfElement(point);
 					array.Changed -= ArrayChanged;
-					//array.SetElement(index, new CurveKey<T>(point.Position, point.Value, array.GetElement(index).leftTangent, array.GetElement(index).rightTangent));
-					var _getStore = (CurveKey<T>)Traverse.Create(array).Method("GetElement").GetValue(index);
-					Traverse.Create(array).Method("SetMethod").GetValue(index, new CurveKey<T>(point.Position, point.Value, _getStore.leftTangent, _getStore.rightTangent));
+					array.SetElement(index, new CurveKey<T>(point.Position, point.Value, array.GetElement(index).leftTangent, array.GetElement(index).rightTangent));
+					//var _getStore = (CurveKey<T>)Traverse.Create(array).Method("GetElement").GetValue(index);
+					//Traverse.Create(array).Method("SetMethod").GetValue(index, new CurveKey<T>(point.Position, point.Value, _getStore.leftTangent, _getStore.rightTangent));
 					array.Changed += ArrayChanged;
 				};
 			}
@@ -318,8 +315,8 @@ public class BepisArrayEditor : BasePlugin
 			}
 
 			ui.Panel().Slot.GetComponent<LayoutElement>();
-			//Slot slot = SyncMemberEditorBuilder.GenerateMemberField(array, name, ui, 0.3f);
-			Slot slot = (Slot)_generateMemberField.Invoke(null, [array, name, ui, 0.3f])!;
+			Slot slot = SyncMemberEditorBuilder.GenerateMemberField(array, name, ui, 0.3f);
+			//Slot slot = (Slot)_generateMemberField.Invoke(null, [array, name, ui, 0.3f])!;
 			ui.ForceNext = slot.AttachComponent<RectTransform>();
 			ui.Text("ArrayEditing.ProxyArray".AsLocaleKey());
 			ui.NestOut();
@@ -394,8 +391,7 @@ public class BepisArrayEditor : BasePlugin
 			}
 
 			if (!array.IsDriven) {
-				//SyncMemberEditorBuilder.BuildList(list, name, listField, ui);
-				_buildList.Invoke(null, [list, name, listField, ui]);
+				SyncMemberEditorBuilder.BuildList(list, name, listField, ui);
 				var listSlot = ui.Current;
 				listSlot.GetComponentOrAttach<DestroyOnUserLeave>(d => d.TargetUser.Target == slot.LocalUser).TargetUser.Target = slot.LocalUser;
 				listSlot.PersistentSelf = false;

@@ -31,7 +31,12 @@
     <PackageReference Include="ResoniteModding.BepInExResoniteShim" Version="0.9.*" />
     <PackageReference Include="ResoniteModding.BepisLocaleLoader" Version="1.*" />
     <PackageReference Include="HarmonyX" Version="2.*" />
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+  
 
   <!-- Local game references -->
   <ItemGroup Condition="Exists('$(GamePath)')">
@@ -39,6 +44,9 @@
       <HintPath>$(GamePath)FrooxEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Publicize Include="FrooxEngine:FrooxEngine.SyncMemberEditorBuilder.BuildList" />
+    <Publicize Include="FrooxEngine:FrooxEngine.SyncMemberEditorBuilder.GenerateMemberField" />
+    <Publicize Include="FrooxEngine" MemberPattern="SyncArrayBase*" />
     <Reference Include="Elements.Core">
       <HintPath>$(GamePath)Elements.Core.dll</HintPath>
       <Private>False</Private>
