@@ -402,14 +402,14 @@ public class BepisArrayEditor : BasePlugin
 						listSlot.AttachComponent<LayoutElement>().MinHeight.Value = 24f;
 						var newUi = new UIBuilder(listSlot, listSlot);
 						RadiantUI_Constants.SetupEditorStyle(newUi);
-						newUi.Text("ArrayEditting.DrivenArray".AsLocaleKey());
+						newUi.Text("ArrayEditing.DrivenArray".AsLocaleKey());
 						proxySlot?.Destroy();
 						array.Changed -= ArrayDriveCheck;
 					}
 				}
 				array.Changed += ArrayDriveCheck;
 			} else {
-				ui.Text("ArrayEditting.DrivenArray".AsLocaleKey());
+				ui.Text("ArrayEditing.DrivenArray".AsLocaleKey());
 			}
 
 			if (newProxy) {
